@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <link rel="stylesheet" href="../static/styles/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to the DOJ Chatbot</h1>
+        <div id="auth">
+            <div id="login-form" class="auth-form">
+                <h2>Login</h2>
+                <form id="loginForm">
+                    <label for="login-username">Username:</label>
+                    <input type="text" id="login-username" name="username" required>
+                    <br>
+                    <label for="login-password">Password:</label>
+                    <input type="password" id="login-password" name="password" required>
+                    <br>
+                    <button type="submit">Login</button>
+                    <p id="login-message"></p>
+                </form>
+                <button id="show-signup">Sign Up</button>
+            </div>
+
+            <div id="signup-form" class="auth-form" style="display: none;">
+                <h2>Sign Up</h2>
+                <form id="signupForm">
+                    <label for="signup-username">Username:</label>
+                    <input type="text" id="signup-username" name="username" required>
+                    <br>
+                    <label for="signup-password">Password:</label>
+                    <input type="password" id="signup-password" name="password" required>
+                    <br>
+                    <button type="submit">Sign Up</button>
+                    <p id="signup-message"></p>
+                </form>
+                <button id="show-login">Login</button>
+            </div>
+        </div>
+
+        <div id="chat" style="display: none;">
+            <h2>Chat with the Bot</h2>
+            <form id="chatForm">
+                <label for="question">Ask a question:</label>
+                <input type="text" id="question" name="question" required>
+                <br>
+                <button type="submit">Submit</button>
+            </form>
+            <div id="response">
+                <h3>Response:</h3>
+                <p id="response-text"></p>
+            </div>
+        </div>
+    </div>
+    <script src="../static/scripts/scripts.js"></script>
+</body>
+</html>

@@ -10,6 +10,10 @@ import nltk
 from nltk.stem import WordNetLemmatizer
 from urllib.parse import urlparse
 import tensorflow as tf
+from deep_translator import GoogleTranslator
+from langdetect import detect
+from langdetect import detect, DetectorFactory
+from googletrans import Translator
 with tf.device('/GPU:0'):
     app = Flask(__name__)
     CORS(app, resources={r"/*": {"origins": "*"}})
@@ -18,6 +22,12 @@ with tf.device('/GPU:0'):
     nltk.download('stopwords')
     nltk.download('wordnet')
     nlp = spacy.load("en_core_web_sm")
+    # Fix for langdetect's seed issue
+    DetectorFactory.seed = 0
+
+    # Initialize GoogleTranslator
+    translator = GoogleTranslator()
+
 
     # Helper functions
     def check_credentials(username, password):
@@ -61,7 +71,7 @@ with tf.device('/GPU:0'):
         with open('conversations.json', 'w') as f:
             json.dump(conversations, f)
 
-    def load_and_process_data(filename="ollama_processed_data.json"):
+    def load_and_process_data(filename="ollama_processed_data copy.json"):
         try:
             with open(filename, "r", encoding="utf-8") as file:
                 content = json.load(file)
@@ -99,11 +109,10 @@ with tf.device('/GPU:0'):
 
         return content
 
-
-    def generate_response(query, username, processed_content):
+    def generate_response(query, username):
         with tf.device('/GPU:0'):
-            # Use the preprocessed content from `load_and_process_data`
-            json_data = processed_content
+            with open('ollama_processed_data copy.json', 'r') as f:
+                json_data = json.load(f)
 
             doc = nlp(query)
             query_tokens = {token.lemma_ for token in doc if not token.is_stop}
@@ -134,18 +143,15 @@ with tf.device('/GPU:0'):
                 context += f"Summary: {summary}\n"
                 context += "Main Topics: " + ", ".join(main_topics) + "\n"
                 context += f"URL: {url}\n\n"
-
+            
             prompt = f"""
             You are an official, professional, and helpful chatbot for the Department of Justice website of India. Your task is to provide a detailed, accurate, and reliable response to the user's question using the provided context.
 
             When answering, follow these guidelines:
-            1. Provide a concise, structured response with the following sections:
-            - **Introductory Section**
-            - **Related Section**
-            - **Responsive Section**
-            - **Conclusion**
-            2. Clearly separate the sections with paragraph breaks.
-            3. Include any relevant URLs directly after the content they refer to.
+            1. **Precise URL Mapping**: Ensure that each URL included in the response directly corresponds to the content it is associated with. Only include URLs that are directly relevant to the information being discussed.
+            2. **Detailed Information**: Provide comprehensive explanations, ensuring that all the information is accurate and relevant to the user's query. If the context contains multiple sources of information, choose the most relevant one and explain why it is the most pertinent.
+            3. **Structured Response**: Clearly separate different sections of the response, ensuring that the URL is placed right after the information it relates to.
+            4. **Avoid Repetition**: Do not repeat the question in the response. Focus on providing a clear and direct answer.
 
             Use the following context to answer the question:
 
@@ -153,27 +159,21 @@ with tf.device('/GPU:0'):
 
             **Question**: {query}
 
-            Provide a structured, accurate, and professional response.
+            Provide a structured, accurate, and detailed response to the question. Ensure that the URLs are directly related to the content they follow and that the information provided is reliable and clear. The response should be written in a professional and helpful tone, appropriate for the Department of Justice website. Do not include the question itself in your response.
+
+            Start your response below:
             """
 
             response = generate(model="tinyllama", prompt=prompt)
             response_text = response.get('response', 'I apologize, but I am unable to generate a response at the moment.')
 
-            structured_response = (
-                "Introductory Section\n"
-                f"Hello! Thank you for your question. {response_text}\n\n"
-                "Related Section\n"
-                "Here are some related topics that might interest you:\n"
-                f"{context}\n\n"
-                "Responsive Section\n"
-                "Please find the detailed response based on the information provided above.\n\n"
-                "Conclusion\n"
-                "Thank you for your patience. Please don't hesitate to ask any further questions."
-            )
+            opening = "Hello! Thank you for your question. "
+            closing = " Is there anything else I can help you with?"
 
-            return structured_response
+            response_text = opening + response_text + closing
+            # save_conversation(username, query, response_text)
 
-
+        return response_text
 
     @app.route('/')
     def index():
@@ -202,17 +202,27 @@ with tf.device('/GPU:0'):
     @app.route('/ask', methods=['POST'])
     def ask():
         data = request.json
-        question = data.get('question')
-        username = request.args.get('username')  # Get the username from the request args
-        # username='vin'
-        if not username:
-            return jsonify({'response': 'User not authenticated'})
-        # processed_content = load_and_process_data()
-        if processed_content:
-            answer = generate_response(question, username,processed_content)
-            return jsonify({'response': answer})
-        else:
-            return jsonify({'response': 'No processed content available.'})
+        question = data.get('question', '')
+        username = 'vin'
+        
+        try:
+            # Detect the language of the input query
+            detected_language = detect(question)
+            
+            # Translate question to English
+            translated_question = translator.translate(text=question, source=detected_language, target='en')
+            
+            # Generate response based on the translated question
+            if processed_content:
+                answer = generate_response(translated_question, username)
+                
+                # Translate answer back to the original language
+                translated_answer = translator.translate(text=answer, source='en', target=detected_language)
+                return jsonify({'response': translated_answer})
+            else:
+                return jsonify({'response': 'No processed content available.'})
+        except Exception as e:
+            return jsonify({'response': f'Error occurred: {str(e)}'})
 
     @app.route('/static/<path:filename>')
     def serve_static(filename):

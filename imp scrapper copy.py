@@ -96,6 +96,3 @@ if __name__ == "__main__":
     # Save the result to a JSON file
     with open("ollama_processed_data.json", "w") as f:
         json.dump(result, f, indent=4)
-    
-   
-   
