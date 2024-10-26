@@ -8,8 +8,10 @@
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to the DOJ Chatbot</h1>
-        <div id="auth">
+        <div class="header">
+            <h1>Welcome to the DOJ Chatbot</h1>
+        </div>
+        <div class="auth-section">
             <div id="login-form" class="auth-form">
                 <h2>Login</h2>
                 <form id="loginForm">
@@ -48,13 +50,51 @@
                 <input type="text" id="question" name="question" required>
                 <br>
                 <button type="submit">Submit</button>
+                <div class="thinking-animation" style="display: none;">
+                    <span>Thinking...</span>
+                    <div class="thinking-dot"></div>
+                    <div class="thinking-dot"></div>
+                    <div class="thinking-dot"></div>
+                </div>
             </form>
             <div id="response">
                 <h3>Response:</h3>
-                <p id="response-text"></p>
+                <div class="response-structure">
+                    <div class="title">Bot Response</div>
+                    <div class="content">
+                        <p id="response-text"></p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     <script src="../static/scripts/scripts.js"></script>
+    <script>
+        const responseText = document.getElementById('response-text');
+        const typingElement = document.querySelector('.typing');
+        const thinkingAnimation = document.querySelector('.thinking-animation');
+
+        function generateText(text) {
+            thinkingAnimation.style.display = 'none';
+            responseText.textContent = '';
+            let charIndex = 0;
+            const intervalId = setInterval(() => {
+                if (charIndex < text.length) {
+                    responseText.textContent += text[charIndex];
+                    charIndex++;
+                } else {
+                    clearInterval(intervalId);
+                }
+            }, 50); // Adjust speed to your liking
+        }
+
+        document.getElementById('chatForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            thinkingAnimation.style.display = 'block';
+            setTimeout(() => {
+                generateText('Hello, this is a bot response!');
+            }, 2000); // Simulate response delay
+        });
+    </script>
 </body>
 </html>

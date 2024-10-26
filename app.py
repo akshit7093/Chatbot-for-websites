@@ -134,6 +134,13 @@ with tf.device('/GPU:0'):
                 context += f"Summary: {summary}\n"
                 context += "Main Topics: " + ", ".join(main_topics) + "\n"
                 context += f"URL: {url}\n\n"
+            
+            user_conversations = processed_content.get('user_conversations', [])
+            conversation_context = "\nPrevious conversations:\n"
+            for conv in user_conversations[-3:]:  # Include last 3 conversations
+                conversation_context += f"Q: {conv['question']}\nA: {conv['answer']}\n\n"
+
+            context += conversation_context
 
             prompt = f"""
             You are an official, professional, and helpful chatbot for the Department of Justice website of India. Your task is to provide a detailed, accurate, and reliable response to the user's question using the provided context.

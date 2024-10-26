@@ -13,7 +13,7 @@ import tensorflow as tf
 from deep_translator import GoogleTranslator
 from langdetect import detect
 from langdetect import detect, DetectorFactory
-from googletrans import Translator
+# from googletrans import Translator
 with tf.device('/GPU:0'):
     app = Flask(__name__)
     CORS(app, resources={r"/*": {"origins": "*"}})
@@ -164,14 +164,14 @@ with tf.device('/GPU:0'):
             Start your response below:
             """
 
-            response = generate(model="tinyllama", prompt=prompt)
+            response = generate(model="llama3.1", prompt=prompt)
             response_text = response.get('response', 'I apologize, but I am unable to generate a response at the moment.')
 
             opening = "Hello! Thank you for your question. "
             closing = " Is there anything else I can help you with?"
 
             response_text = opening + response_text + closing
-            # save_conversation(username, query, response_text)
+        save_conversation(username, query, response_text)
 
         return response_text
 
